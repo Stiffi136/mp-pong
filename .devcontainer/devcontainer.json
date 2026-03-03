@@ -1,0 +1,23 @@
+{
+  "name": "stf-devcontainer",
+  "image": "ghcr.io/stiffi136/stf-devcontainer:latest",
+  "remoteUser": "node",
+  "mounts": [
+    "source=codex-config,target=/home/node/.codex,type=volume",
+    "source=claude-config,target=/home/node/.claude,type=volume"
+  ],
+  "updateRemoteUserUID": true,
+  "postCreateCommand": "node --version && bun --version && codex --version && eslint --version",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "openai.chatgpt",
+        "anthropic.claude-code",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
