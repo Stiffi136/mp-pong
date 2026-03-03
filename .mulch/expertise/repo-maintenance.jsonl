@@ -1,0 +1,1 @@
+{"type":"decision","title":"Worktree-Bereinigung per Remove+Prune","rationale":"Die vier .overstory-Worktrees waren nicht mehr benötigt; Entfernung vereinfacht den Repository-Zustand und verhindert Konflikte durch parallele Dirty-Worktrees.","classification":"tactical","recorded_at":"2026-03-03T22:32:23.503Z","id":"mx-5fa346"}
