@@ -2,14 +2,14 @@
 
 ## Überblick
 
-Ein Online-Multiplayer-Pong-Spiel, bei dem **2 bis 8 Spieler** über das Netzwerk gegeneinander antreten. Das Spielfeld ist ein regelmäßiges Polygon — bei 2 Spielern das klassische Rechteck, bei 3–8 Spielern ein entsprechendes Polygon (Dreieck bis Oktagon). Jeder Spieler verteidigt eine Seite. Das Spiel besteht aus einem Node.js-Server (TypeScript) und einem Browser-Client (Canvas API). Der Client wird auf **GitHub Pages** gehostet, der Server als Docker-Container auf **Railway**.
+Ein Online-Multiplayer-Pong-Spiel, bei dem **beliebig viele Spieler** über das Netzwerk gegeneinander antreten. Das Spielfeld ist ein regelmäßiges Polygon, dessen Seitenanzahl der Spieleranzahl entspricht. Jeder Spieler verteidigt eine Seite. Das Spiel besteht aus einem Node.js-Server (TypeScript) und einem Browser-Client (Canvas API). Der Client wird auf **GitHub Pages** gehostet, der Server als Docker-Container auf **Railway**.
 
 ---
 
 ## Spielregeln
 
-- **2 bis 8 Spieler** pro Raum
-- Das Spielfeld ist ein regelmäßiges Polygon — die Seitenanzahl entspricht der Spieleranzahl (2 Spieler → klassisches Rechteck, 3 → Dreieck, … 8 → Oktagon)
+- **Mindestens 2 Spieler** pro Raum, keine Obergrenze
+- Das Spielfeld ist ein regelmäßiges Polygon — die Seitenanzahl entspricht der Spieleranzahl (2 → Rechteck, 3 → Dreieck, 5 → Pentagon, 20 → Ikosagon, …)
 - Jeder Spieler kontrolliert ein Paddle auf **seiner** Seite des Polygons
 - Ein Ball prallt innerhalb des Polygons ab
 - Verfehlt ein Spieler den Ball (Ball passiert seine Seite), verliert er ein **Leben** (Start: 3 Leben)
@@ -71,7 +71,7 @@ Alle Nachrichten werden als JSON über WebSocket übertragen.
 
 | Typ           | Payload                                              | Beschreibung                              |
 | ------------- | ---------------------------------------------------- | ----------------------------------------- |
-| `lobby`       | `{ players: { name: string, ready: boolean }[], count: number, max: number }` | Aktuelle Lobby-Info |
+| `lobby`       | `{ players: { name: string, ready: boolean }[], count: number }` | Aktuelle Lobby-Info |
 | `start`       | `{ slotIndex: number, totalPlayers: number }`        | Spiel beginnt, teilt Slot-Index mit       |
 | `state`       | `GameState`                                          | Aktueller Spielzustand (pro Tick)         |
 | `eliminated`  | `{ slotIndex: number, name: string }`                | Ein Spieler ist ausgeschieden             |
@@ -287,6 +287,6 @@ Die Variable wird beim Bundling (esbuild `define`) als String-Konstante in den C
 
 - Authentifizierung / Benutzerkonten
 - Persistenter Punktestand / Rangliste
-- Mehr als 8 Spieler pro Raum
+- Spielerobergrenze pro Raum
 - Powerups oder Spielvarianten
 - Zuschauer-Modus
