@@ -30,6 +30,8 @@ jobs:
       - run: npm run build:client
         env:
           WS_URL: ${{ vars.WS_URL }}
+          UMAMI_SRC: ${{ vars.UMAMI_SRC }}
+          UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
