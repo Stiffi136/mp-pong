@@ -1,26 +1,26 @@
-# mp-pong — Spezifikation
+# mp-pong — Specification
 
-## Überblick
+## Overview
 
-Ein Online-Multiplayer-Pong-Spiel, bei dem **beliebig viele Spieler** über das Netzwerk gegeneinander antreten. Das Spielfeld ist ein regelmäßiges Polygon, dessen Seitenanzahl der Spieleranzahl entspricht. Jeder Spieler verteidigt eine Seite. Das Spiel besteht aus einem Node.js-Server (TypeScript) und einem Browser-Client (Canvas API). Der Client wird auf **GitHub Pages** gehostet, der Server als Docker-Container auf **Railway**.
-
----
-
-## Spielregeln
-
-- **Mindestens 2 Spieler** pro Raum, keine Obergrenze
-- Das Spielfeld ist ein regelmäßiges Polygon — die Seitenanzahl entspricht der Spieleranzahl (2 → Rechteck, 3 → Dreieck, 5 → Pentagon, 20 → Ikosagon, …)
-- Jeder Spieler kontrolliert ein Paddle auf **seiner** Seite des Polygons
-- Ein Ball prallt innerhalb des Polygons ab
-- Verfehlt ein Spieler den Ball (Ball passiert seine Seite), verliert er ein **Leben** (Start: 3 Leben)
-- Ein Spieler mit 0 Leben scheidet aus; seine Seite wird zur Wand
-- Der **letzte verbleibende Spieler** gewinnt die Runde
-- Nach Ende einer Runde können die Spieler ein Rematch starten
-- Das Spiel startet, sobald mindestens **2 Spieler** im Raum sind und **alle Spieler „Ready"** signalisiert haben
+An online multiplayer Pong game where **any number of players** compete against each other over the network. The playing field is a regular polygon whose number of sides matches the number of players. Each player defends one side. The game consists of a Node.js server (TypeScript) and a browser client (Canvas API). The client is hosted on **GitHub Pages**, the server as a Docker container on **Railway**.
 
 ---
 
-## Architektur
+## Game Rules
+
+- **At least 2 players** per room, no upper limit
+- The playing field is a regular polygon — the number of sides matches the number of players (2 → rectangle, 3 → triangle, 5 → pentagon, 20 → icosagon, …)
+- Each player controls a paddle on **their** side of the polygon
+- A ball bounces inside the polygon
+- If a player misses the ball (ball passes through their side), they lose a **life** (starting: 3 lives)
+- A player with 0 lives is eliminated; their side becomes a wall
+- The **last remaining player** wins the round
+- After a round ends, players can start a rematch
+- The game starts once at least **2 players** are in the room and **all players have signaled "Ready"**
+
+---
+
+## Architecture
 
 ```
 ┌─────────────────────┐        WebSocket        ┌─────────────────────┐
@@ -31,87 +31,87 @@ Ein Online-Multiplayer-Pong-Spiel, bei dem **beliebig viele Spieler** über das 
 
 ### Server (`src/server/`)
 
-- **Technologie:** Node.js, TypeScript, `ws` (WebSocket-Bibliothek)
-- **Hosting:** Docker-Container auf Railway
-- **Kein** statisches File-Serving — der Client wird separat auf GitHub Pages gehostet
-- **Verantwortlichkeiten:**
-  - Verwaltung von Spielräumen (Rooms)
-  - Autoritativer Game Loop (Spielzustand liegt ausschließlich auf dem Server)
-  - Kollisionserkennung (Ball ↔ Wände, Ball ↔ Paddle)
-  - Punktestand-Verwaltung
-  - Spieler-Eliminierung und dynamische Wandkonvertierung
-  - Broadcast des Spielzustands an alle Clients (~60 Hz)
+- **Technology:** Node.js, TypeScript, `ws` (WebSocket library)
+- **Hosting:** Docker container on Railway
+- **No** static file serving — the client is hosted separately on GitHub Pages
+- **Responsibilities:**
+  - Room management
+  - Authoritative game loop (game state resides exclusively on the server)
+  - Collision detection (ball ↔ walls, ball ↔ paddle)
+  - Score management
+  - Player elimination and dynamic wall conversion
+  - Broadcasting game state to all clients (~60 Hz)
 
 ### Client (`src/client/`)
 
-- **Technologie:** Browser, TypeScript, Canvas API
-- **Hosting:** GitHub Pages (statische Dateien)
-- **Verantwortlichkeiten:**
-  - Verbindung zum Server per WebSocket (URL konfigurierbar)
-  - Rendern des Spielzustands mit Rotation (eigene Seite immer unten), inkl. Paddle-Ränder auf allen Seiten
-  - Erfassen und Senden der Spieler-Eingaben (Tastatur)
-  - Anzeige von Punktestand, Warteschleife, Spielende
+- **Technology:** Browser, TypeScript, Canvas API
+- **Hosting:** GitHub Pages (static files)
+- **Responsibilities:**
+  - Connecting to the server via WebSocket (configurable URL)
+  - Rendering game state with rotation (own side always at the bottom), including paddle edges on all sides
+  - Capturing and sending player inputs (keyboard)
+  - Displaying scores, waiting screen, game over
 
 ---
 
-## Netzwerkprotokoll
+## Network Protocol
 
-Alle Nachrichten werden als JSON über WebSocket übertragen.
+All messages are transmitted as JSON over WebSocket.
 
 ### Client → Server
 
-| Typ       | Payload                          | Beschreibung                          |
+| Type      | Payload                          | Description                           |
 | --------- | -------------------------------- | ------------------------------------- |
-| `join`    | `{ name: string, room: string }` | Spieler tritt einem Raum bei          |
-| `input`   | `{ left: boolean, right: boolean }` | Paddle-Steuerung entlang der eigenen Seite |
-| `ready`     | —                              | Spieler signalisiert Bereitschaft      |
-| `rematch` | —                                | Spieler möchte erneut spielen         |
+| `join`    | `{ name: string, room: string }` | Player joins a room                  |
+| `input`   | `{ left: boolean, right: boolean }` | Paddle control along own side     |
+| `ready`   | —                                | Player signals readiness              |
+| `rematch` | —                                | Player wants to play again            |
 
 ### Server → Client
 
-| Typ           | Payload                                              | Beschreibung                              |
+| Type          | Payload                                              | Description                               |
 | ------------- | ---------------------------------------------------- | ----------------------------------------- |
-| `lobby`       | `{ players: { name: string, ready: boolean }[], count: number }` | Aktuelle Lobby-Info |
-| `start`       | `{ slotIndex: number, totalPlayers: number }`        | Spiel beginnt, teilt Slot-Index mit       |
-| `state`       | `GameState`                                          | Aktueller Spielzustand (pro Tick)         |
-| `eliminated`  | `{ slotIndex: number, name: string }`                | Ein Spieler ist ausgeschieden             |
-| `game_over`   | `{ winnerIndex: number, winnerName: string }`        | Spiel beendet                             |
+| `lobby`       | `{ players: { name: string, ready: boolean }[], count: number }` | Current lobby info      |
+| `start`       | `{ slotIndex: number, totalPlayers: number }`        | Game begins, assigns slot index           |
+| `state`       | `GameState`                                          | Current game state (per tick)             |
+| `eliminated`  | `{ slotIndex: number, name: string }`                | A player has been eliminated              |
+| `game_over`   | `{ winnerIndex: number, winnerName: string }`        | Game ended                                |
 
-### `GameState`-Objekt
+### `GameState` Object
 
 ```ts
 interface Player {
-  slotIndex: number;       // 0 .. n-1, Position im Polygon
+  slotIndex: number;       // 0 .. n-1, position in polygon
   name: string;
-  lives: number;           // 0 = eliminiert
-  paddlePos: number;       // 0..1 — relative Position entlang der Seite
+  lives: number;           // 0 = eliminated
+  paddlePos: number;       // 0..1 — relative position along the side
   isAlive: boolean;
 }
 
 interface GameState {
   ball: { x: number; y: number; vx: number; vy: number };
   players: Player[];
-  polygon: number;         // Anzahl Seiten (= Anzahl Slots)
+  polygon: number;         // number of sides (= number of slots)
 }
 ```
 
 ---
 
-## Spielfeld
+## Playing Field
 
-- Das Spielfeld ist ein **regelmäßiges Polygon** mit so vielen Seiten wie Spieler-Slots
-- Das Polygon ist in einen Kreis mit Radius **400** Einheiten einbeschrieben, zentriert bei **(400, 400)**
-- Canvas-Größe: **800 × 800** Pixel
-- Ball-Radius: **8**
-- Paddle-Länge: **60% der Seitenlänge** des Polygons
-- Paddle-Dicke: **8**
-- Paddle bewegt sich entlang seiner zugewiesenen Seite
-- Jede Seite zeigt **Paddle-Ränder** (Markierungen), die den Bewegungsbereich des Paddles kennzeichnen — so ist sofort erkennbar, ob ein Ball eine offene Lücke trifft oder noch abgewehrt werden kann
-- Die Ränder werden für **alle Spieler** angezeigt (eigene Seite + Gegnerseiten)
+- The playing field is a **regular polygon** with as many sides as player slots
+- The polygon is inscribed in a circle with radius **400** units, centered at **(400, 400)**
+- Canvas size: **800 × 800** pixels
+- Ball radius: **8**
+- Paddle length: **60% of the polygon's side length**
+- Paddle thickness: **8**
+- Paddle moves along its assigned side
+- Each side shows **paddle edges** (markers) indicating the paddle's range of movement — making it immediately visible whether a ball hits an open gap or can still be deflected
+- Edges are displayed for **all players** (own side + opponent sides)
 
-### Polygon-Geometrie
+### Polygon Geometry
 
-Für `n` Spieler werden die Eckpunkte des Polygons berechnet:
+For `n` players, the polygon vertices are calculated:
 
 ```
 vertex(i) = (
@@ -120,60 +120,60 @@ vertex(i) = (
 )
 ```
 
-Seite `i` verbindet `vertex(i)` mit `vertex((i+1) % n)`. Spieler `i` kontrolliert Seite `i`.
+Side `i` connects `vertex(i)` with `vertex((i+1) % n)`. Player `i` controls side `i`.
 
-### Client-Rotation (eigener Spieler immer unten)
+### Client Rotation (own player always at the bottom)
 
-Der Server berechnet alle Positionen in **Weltkoordinaten** (Polygon zentriert, keine Rotation). Der Client **rotiert die gesamte Szene**, sodass die eigene Seite des Spielers immer **horizontal am unteren Bildschirmrand** erscheint.
+The server calculates all positions in **world coordinates** (polygon centered, no rotation). The client **rotates the entire scene** so that the player's own side always appears **horizontally at the bottom of the screen**.
 
-Rotationswinkel für Spieler mit `slotIndex s` bei `n` Seiten:
+Rotation angle for player with `slotIndex s` and `n` sides:
 
 ```
 rotation = π - (2π * s / n + π/n)
 ```
 
-Das Polygon, alle Paddles und der Ball werden um den Mittelpunkt `(400, 400)` um diesen Winkel rotiert gerendert.
+The polygon, all paddles, and the ball are rendered rotated around the center point `(400, 400)` by this angle.
 
-### Sonderfall: 2 Spieler
+### Special Case: 2 Players
 
-Bei 2 Spielern entsteht durch die Rotation ein um 90° gedrehtes klassisches Pong: der eigene Spieler hat sein Paddle horizontal unten, der Gegner horizontal oben. Es wird trotzdem das reguläre Polygon-System (Linie/Rechteck) verwendet — kein Sonderfall im Code.
-
----
-
-## Steuerung
-
-Da jeder Spieler nur seinen eigenen Bildschirm sieht, gibt es eine einheitliche Steuerung:
-
-| Aktion         | Taste 1 | Taste 2 |
-| -------------- | ------- | ------- |
-| Paddle links   | `A` / `←` | —    |
-| Paddle rechts  | `D` / `→` | —    |
-
-„Links" und „Rechts" beziehen sich auf die Bewegung entlang der eigenen Polygon-Seite (vom Spieler aus gesehen).
+With 2 players, the rotation produces a classic Pong rotated by 90°: the player's own paddle is horizontal at the bottom, the opponent's is horizontal at the top. The regular polygon system (line/rectangle) is still used — no special case in the code.
 
 ---
 
-## Projektstruktur (geplant)
+## Controls
+
+Since each player only sees their own screen, there is a unified control scheme:
+
+| Action       | Key 1     | Key 2 |
+| ------------ | --------- | ----- |
+| Paddle left  | `A` / `←` | —     |
+| Paddle right | `D` / `→` | —     |
+
+"Left" and "right" refer to movement along the player's own polygon side (from the player's perspective).
+
+---
+
+## Project Structure (planned)
 
 ```
 mp-pong/
 ├── src/
 │   ├── server/
-│   │   ├── index.ts        # Einstiegspunkt, WebSocket-Server
-│   │   ├── room.ts         # Raumverwaltung & Lobby-Logik
-│   │   ├── game.ts         # Game Loop, Physik, Kollision
-│   │   └── polygon.ts      # Polygon-Geometrie & Reflexionsberechnung
+│   │   ├── index.ts        # Entry point, WebSocket server
+│   │   ├── room.ts         # Room management & lobby logic
+│   │   ├── game.ts         # Game loop, physics, collision
+│   │   └── polygon.ts      # Polygon geometry & reflection calculation
 │   ├── client/
-│   │   ├── index.html      # Shell-Seite
-│   │   ├── main.ts         # WebSocket-Verbindung, Eingaben
-│   │   ├── renderer.ts     # Canvas-Rendering (Polygon, Paddles, Ball)
-│   │   └── lobby.ts        # Lobby-UI (Spielerliste, Ready-Button)
+│   │   ├── index.html      # Shell page
+│   │   ├── main.ts         # WebSocket connection, inputs
+│   │   ├── renderer.ts     # Canvas rendering (polygon, paddles, ball)
+│   │   └── lobby.ts        # Lobby UI (player list, ready button)
 │   └── shared/
-│       └── types.ts        # Gemeinsame Typen (GameState, Messages, Player)
+│       └── types.ts        # Shared types (GameState, Messages, Player)
 ├── .github/
 │   └── workflows/
-│       └── deploy-client.yml  # GitHub Pages Deployment
-├── Dockerfile              # Multi-stage Build (Server)
+│       └── deploy-client.yml  # GitHub Pages deployment
+├── Dockerfile              # Multi-stage build (server)
 ├── SPEC.md
 ├── package.json
 ├── tsconfig.json
@@ -182,46 +182,46 @@ mp-pong/
 
 ---
 
-## Physik & Kollision
+## Physics & Collision
 
-- Der Ball bewegt sich mit konstanter Geschwindigkeit (Betrag bleibt gleich, Richtung ändert sich bei Reflexion)
-- **Reflexion an Wand/Paddle:** Der Ball wird am Normalenvektor der jeweiligen Polygon-Seite reflektiert
-- **Paddle-Treffer:** Der Auftreffwinkel wird leicht vom Abstand zur Paddle-Mitte beeinflusst (Spin-Effekt)
-- **Durchgang durch eine Seite:** Wenn der Ball eine Seite passiert, auf der kein Paddle den Ball abfängt:
-  - Ist der Spieler aktiv → Spieler verliert 1 Leben
-  - Ist die Seite eine Wand (Spieler eliminiert) → Ball prallt ab wie an einer normalen Wand
-- Nach einem Lebensverlust wird der Ball in die Mitte zurückgesetzt mit zufälliger Richtung
+- The ball moves at constant speed (magnitude stays the same, direction changes on reflection)
+- **Reflection on wall/paddle:** The ball is reflected along the normal vector of the respective polygon side
+- **Paddle hit:** The impact angle is slightly influenced by the distance from the paddle center (spin effect)
+- **Passing through a side:** When the ball passes through a side where no paddle intercepts it:
+  - If the player is active → player loses 1 life
+  - If the side is a wall (player eliminated) → ball bounces off as on a normal wall
+- After a life loss, the ball is reset to the center with a random direction
 
-## Räume & Lobby-System
+## Rooms & Lobby System
 
-### Startscreen
+### Start Screen
 
-Beim ersten Öffnen der Seite (ohne Hash in der URL) sieht der Spieler zwei Buttons:
+When first opening the page (without a hash in the URL), the player sees two buttons:
 
-- **Play** — Erstellt einen neuen Raum mit zufälliger ID, setzt den Hash in der URL (`#roomId`) und leitet zur Namenseingabe weiter
-- **Join** — Zeigt ein Eingabefeld für die Raum-ID. Nach Eingabe wird der Hash gesetzt und zur Namenseingabe weitergeleitet
+- **Play** — Creates a new room with a random ID, sets the hash in the URL (`#roomId`) and proceeds to name entry
+- **Join** — Shows an input field for the room ID. After entry, the hash is set and proceeds to name entry
 
-Wird die Seite mit einem Hash geöffnet (z.B. über einen geteilten Link), wird der Startscreen übersprungen und direkt die Namenseingabe angezeigt.
+If the page is opened with a hash (e.g. via a shared link), the start screen is skipped and name entry is shown directly.
 
-### Ablauf
+### Flow
 
-1. **Startscreen** → Play / Join (nur ohne Hash)
-2. **Namenseingabe** → Spieler gibt seinen Namen ein, `join`-Nachricht wird gesendet
-3. **Lobby** → Spielerliste mit Ready-Status, teilbare URL wird angezeigt
-4. **Spiel** → Startet wenn alle Ready
+1. **Start screen** → Play / Join (only without hash)
+2. **Name entry** → Player enters their name, `join` message is sent
+3. **Lobby** → Player list with ready status, shareable URL is displayed
+4. **Game** → Starts when all are ready
 
-### Raum-URL
+### Room URL
 
-- Die Raum-ID wird im URL-Hash gespeichert: `https://…/#roomId`
-- Spieler können die URL teilen, um andere in denselben Raum einzuladen
+- The room ID is stored in the URL hash: `https://…/#roomId`
+- Players can share the URL to invite others to the same room
 
 ### Lobby
 
-- In der Lobby sehen alle Spieler, wer beigetreten ist (Namen + Ready-Status)
-- Die teilbare Raum-URL wird prominent angezeigt (Copy-Button)
-- Jeder Spieler kann sich per Button/Taste als **„Ready"** markieren (Toggle)
-- Das Spiel startet automatisch, sobald **mindestens 2 Spieler** im Raum sind und **alle** Ready sind
-- Die Polygon-Form wird beim Start festgelegt (basierend auf Spieleranzahl)
+- In the lobby, all players see who has joined (names + ready status)
+- The shareable room URL is prominently displayed (copy button)
+- Each player can mark themselves as **"Ready"** via button/key (toggle)
+- The game starts automatically once **at least 2 players** are in the room and **all** are ready
+- The polygon shape is determined at start (based on player count)
 
 ---
 
@@ -229,20 +229,20 @@ Wird die Seite mit einem Hash geöffnet (z.B. über einen geteilten Link), wird 
 
 ### Server (Railway + Docker)
 
-- Reiner WebSocket-Server, **kein** HTTP-File-Serving
-- Port über Umgebungsvariable `PORT` (Railway setzt diese automatisch, Default: `8080`)
-- CORS-Header für WebSocket-Verbindungen von GitHub Pages erlauben
+- Pure WebSocket server, **no** HTTP file serving
+- Port via environment variable `PORT` (Railway sets this automatically, default: `8080`)
+- CORS headers to allow WebSocket connections from GitHub Pages
 
-#### Umgebungsvariablen (Server)
+#### Environment Variables (Server)
 
-| Variable | Beschreibung | Default |
-| -------- | ------------ | ------- |
-| `PORT`   | WebSocket-Server-Port | `8080` |
+| Variable | Description          | Default |
+| -------- | -------------------- | ------- |
+| `PORT`   | WebSocket server port | `8080` |
 
 #### Dockerfile
 
 ```dockerfile
-# Build-Stage
+# Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
@@ -250,7 +250,7 @@ RUN npm ci
 COPY . .
 RUN npm run build:server
 
-# Runtime-Stage
+# Runtime stage
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=build /app/dist/server ./dist/server
@@ -263,30 +263,30 @@ CMD ["node", "dist/server/index.js"]
 
 ### Client (GitHub Pages)
 
-- Statische Dateien (`index.html`, gebundelte JS-Datei) werden auf GitHub Pages gehostet
-- Die WebSocket-Server-URL wird zur **Build-Zeit** als Umgebungsvariable injiziert
-- Für lokale Entwicklung: `ws://localhost:8080` als Default
+- Static files (`index.html`, bundled JS file) are hosted on GitHub Pages
+- The WebSocket server URL is injected at **build time** as an environment variable
+- For local development: `ws://localhost:8080` as default
 
-#### Umgebungsvariablen (Client-Build)
+#### Environment Variables (Client Build)
 
-| Variable          | Beschreibung                          | Default                |
+| Variable          | Description                           | Default                |
 | ----------------- | ------------------------------------- | ---------------------- |
-| `WS_URL`          | WebSocket-URL des Servers             | `ws://localhost:8080`  |
+| `WS_URL`          | WebSocket URL of the server           | `ws://localhost:8080`  |
 
-Die Variable wird beim Bundling (esbuild `define`) als String-Konstante in den Client eingebettet.
+The variable is embedded as a string constant in the client during bundling (esbuild `define`).
 
-### Build-Prozess
+### Build Process
 
 - **Server:** TypeScript → `dist/server/` (via `tsc`)
-- **Client:** TypeScript-Bundling → `dist/client/` (via `esbuild`, mit `WS_URL`-Injection)
-- GitHub Actions Workflow baut den Client und deployt nach GitHub Pages
+- **Client:** TypeScript bundling → `dist/client/` (via `esbuild`, with `WS_URL` injection)
+- GitHub Actions workflow builds the client and deploys to GitHub Pages
 
 ---
 
-## Nicht im Scope (v1)
+## Out of Scope (v1)
 
-- Authentifizierung / Benutzerkonten
-- Persistenter Punktestand / Rangliste
-- Spielerobergrenze pro Raum
-- Powerups oder Spielvarianten
-- Zuschauer-Modus
+- Authentication / user accounts
+- Persistent scores / leaderboard
+- Player limit per room
+- Powerups or game variants
+- Spectator mode
