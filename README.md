@@ -1,6 +1,6 @@
 # MP-PONG
 
-Multiplayer Pong in the browser — 2 to 8 players compete in a polygon arena.
+Multiplayer Pong in the browser — 2 to unlimited players compete in a polygon arena.
 
 ## Play
 
