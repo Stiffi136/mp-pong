@@ -1,4 +1,15 @@
 declare const __WS_URL__: string;
+declare const __UMAMI_SRC__: string;
+declare const __UMAMI_WEBSITE_ID__: string;
+
+// Umami analytics
+if (__UMAMI_SRC__ && __UMAMI_WEBSITE_ID__) {
+  const s = document.createElement("script");
+  s.defer = true;
+  s.src = __UMAMI_SRC__;
+  s.dataset.websiteId = __UMAMI_WEBSITE_ID__;
+  document.head.appendChild(s);
+}
 
 import type { ServerMessage, GameState } from "../shared/types.js";
 import { Renderer } from "./renderer.js";

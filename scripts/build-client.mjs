@@ -16,6 +16,8 @@ try {
 } catch { /* no .env file */ }
 
 const wsUrl = process.env.WS_URL || "ws://localhost:8080";
+const umamiSrc = process.env.UMAMI_SRC || "";
+const umamiWebsiteId = process.env.UMAMI_WEBSITE_ID || "";
 const watch = process.argv.includes("--watch");
 
 /** @type {esbuild.BuildOptions} */
@@ -27,6 +29,8 @@ const opts = {
   target: "es2022",
   define: {
     __WS_URL__: JSON.stringify(wsUrl),
+    __UMAMI_SRC__: JSON.stringify(umamiSrc),
+    __UMAMI_WEBSITE_ID__: JSON.stringify(umamiWebsiteId),
   },
   minify: !watch,
   sourcemap: true,
