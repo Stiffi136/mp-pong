@@ -7,7 +7,7 @@ if (__UMAMI_SRC__ && __UMAMI_WEBSITE_ID__) {
   const s = document.createElement("script");
   s.defer = true;
   s.src = __UMAMI_SRC__;
-  s.dataset.websiteId = __UMAMI_WEBSITE_ID__;
+  s.dataset["websiteId"] = __UMAMI_WEBSITE_ID__;
   document.head.appendChild(s);
 }
 
@@ -98,6 +98,7 @@ function handleServerMessage(msg: ServerMessage): void {
       hideGameOver();
       document.getElementById("hud")!.style.display = "block";
       touchControls.style.display = "flex";
+      canvas.classList.add("with-touch");
       break;
 
     case "state":
