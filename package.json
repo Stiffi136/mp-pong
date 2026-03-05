@@ -7,6 +7,7 @@
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "node scripts/build-client.mjs",
     "build": "npm run build:server && npm run build:client",
+    "dev": "npm run build && node --watch dist/server/server/index.js & node scripts/build-client.mjs --watch & npx serve dist/client -l 3000 & wait",
     "dev:server": "tsc -p tsconfig.server.json --watch",
     "dev:client": "node scripts/build-client.mjs --watch",
     "start": "node dist/server/server/index.js",

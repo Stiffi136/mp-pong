@@ -19,6 +19,8 @@ export interface GameState {
   ball: Ball;
   players: Player[];
   polygon: number; // number of sides = number of slots
+  difficultyLevel: number;
+  ticksUntilNextLevel: number;
 }
 
 // ── Client → Server Messages ────────────────────────────────────────────────
@@ -101,6 +103,22 @@ export const STARTING_LIVES = 3;
 export const BALL_SPEED = 5;
 export const PADDLE_SPEED = 0.015;
 export const TICK_RATE = 60;
+export const DIFFICULTY_INTERVAL = 30 * TICK_RATE; // 30 seconds
+
+/** Ball speed multiplier at given difficulty level (grows 20% per level). */
+export function ballSpeedMultiplier(level: number): number {
+  return 1 + level * 0.2;
+}
+
+/** Paddle length multiplier at given difficulty level (shrinks 20% per level, min 20%). */
+export function paddleLengthMultiplier(level: number): number {
+  return Math.max(0.2, 1 - level * 0.2);
+}
+
+/** Effective paddle length ratio at given difficulty level. */
+export function effectivePaddleLength(level: number): number {
+  return PADDLE_LENGTH_RATIO * paddleLengthMultiplier(level);
+}
 
 /**
  * For n players, return the number of polygon sides.

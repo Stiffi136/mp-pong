@@ -91,7 +91,7 @@ function handleServerMessage(msg: ServerMessage): void {
 
     case "state":
       currentState = msg.state;
-      updateHud(msg.state.players);
+      updateHud(msg.state.players, msg.state.ticksUntilNextLevel, msg.state.difficultyLevel);
       break;
 
     case "eliminated":

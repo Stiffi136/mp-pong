@@ -1,4 +1,4 @@
-import type { LobbyInfo } from "../shared/types.js";
+import { type LobbyInfo, TICK_RATE } from "../shared/types.js";
 
 type Screen = "start" | "name" | "lobby" | "game";
 
@@ -44,6 +44,8 @@ export function setShareUrl(url: string): void {
 
 export function updateHud(
   players: { name: string; lives: number; isAlive: boolean }[],
+  ticksUntilNextLevel: number,
+  difficultyLevel: number,
 ): void {
   const hud = document.getElementById("hud")!;
   hud.style.display = "block";
@@ -57,6 +59,10 @@ export function updateHud(
     }
     display.appendChild(span);
   }
+  // Difficulty timer
+  const timer = document.getElementById("difficulty-timer")!;
+  const seconds = Math.ceil(ticksUntilNextLevel / TICK_RATE);
+  timer.textContent = `Lv ${String(difficultyLevel + 1)} in ${String(seconds)}s`;
 }
 
 export function showGameOver(winnerName: string): void {

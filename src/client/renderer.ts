@@ -5,8 +5,8 @@ import {
   CENTER_Y,
   POLYGON_RADIUS,
   BALL_RADIUS,
-  PADDLE_LENGTH_RATIO,
   PADDLE_THICKNESS,
+  effectivePaddleLength,
 } from "../shared/types.js";
 
 function vertex(i: number, n: number): { x: number; y: number } {
@@ -39,6 +39,7 @@ export class Renderer {
     const ctx = this.ctx;
     const n = state.polygon;
     const rotation = playerRotation(mySlotIndex, n);
+    const paddleLen = effectivePaddleLength(state.difficultyLevel);
 
     ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
     ctx.save();
@@ -46,8 +47,8 @@ export class Renderer {
     ctx.rotate(rotation);
     ctx.translate(-CENTER_X, -CENTER_Y);
 
-    this.drawPolygon(n, state);
-    this.drawPaddles(state);
+    this.drawPolygon(n, state, paddleLen);
+    this.drawPaddles(state, paddleLen);
     this.drawBall(state.ball.x, state.ball.y);
 
     ctx.restore();
@@ -61,32 +62,29 @@ export class Renderer {
     this.canvas.style.display = "none";
   }
 
-  private drawPolygon(n: number, state: GameState): void {
+  private drawPolygon(n: number, state: GameState, paddleLen: number): void {
     const ctx = this.ctx;
 
     for (let i = 0; i < n; i++) {
       const a = vertex(i, n);
       const b = vertex((i + 1) % n, n);
-      const player = state.players[i];
+      const player = state.players.find((p) => p.slotIndex === i);
 
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
 
-      if (player && player.isAlive) {
-        // Active side — draw with gaps showing paddle range
+      if (player?.isAlive) {
         ctx.strokeStyle = "#444";
         ctx.lineWidth = 2;
       } else {
-        // Wall (eliminated or no player) — solid
         ctx.strokeStyle = "#666";
         ctx.lineWidth = 3;
       }
       ctx.stroke();
 
-      // Draw paddle range markers for alive players
       if (player?.isAlive) {
-        this.drawPaddleRangeMarkers(a, b);
+        this.drawPaddleRangeMarkers(a, b, paddleLen);
       }
     }
   }
@@ -94,13 +92,12 @@ export class Renderer {
   private drawPaddleRangeMarkers(
     a: { x: number; y: number },
     b: { x: number; y: number },
+    paddleLen: number,
   ): void {
     const ctx = this.ctx;
-    const halfPaddle = PADDLE_LENGTH_RATIO / 2;
-    // Left marker at t = halfPaddle (min paddle center position)
+    const halfPaddle = paddleLen / 2;
     const lx = a.x + halfPaddle * (b.x - a.x);
     const ly = a.y + halfPaddle * (b.y - a.y);
-    // Right marker at t = 1 - halfPaddle
     const rx = a.x + (1 - halfPaddle) * (b.x - a.x);
     const ry = a.y + (1 - halfPaddle) * (b.y - a.y);
 
@@ -115,9 +112,10 @@ export class Renderer {
     ctx.restore();
   }
 
-  private drawPaddles(state: GameState): void {
+  private drawPaddles(state: GameState, paddleLen: number): void {
     const ctx = this.ctx;
     const n = state.polygon;
+    const halfPaddle = paddleLen / 2;
 
     for (const player of state.players) {
       if (!player.isAlive) {
@@ -126,9 +124,7 @@ export class Renderer {
 
       const a = vertex(player.slotIndex, n);
       const b = vertex((player.slotIndex + 1) % n, n);
-      const halfPaddle = PADDLE_LENGTH_RATIO / 2;
 
-      // Paddle center along side
       const t = player.paddlePos;
       const t0 = t - halfPaddle;
       const t1 = t + halfPaddle;
@@ -138,11 +134,9 @@ export class Renderer {
       const px1 = a.x + t1 * (b.x - a.x);
       const py1 = a.y + t1 * (b.y - a.y);
 
-      // Compute inward offset for paddle thickness
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const len = Math.sqrt(dx * dx + dy * dy);
-      // Inward normal (toward center)
       let nx = -dy / len;
       let ny = dx / len;
       const mx = (a.x + b.x) / 2 - CENTER_X;

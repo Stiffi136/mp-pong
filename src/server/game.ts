@@ -7,9 +7,11 @@ import {
   BALL_SPEED,
   PADDLE_SPEED,
   STARTING_LIVES,
-  PADDLE_LENGTH_RATIO,
+  DIFFICULTY_INTERVAL,
   polygonSides,
   slotForPlayer,
+  ballSpeedMultiplier,
+  effectivePaddleLength,
 } from "../shared/types.js";
 import {
   checkBallSideCollision,
@@ -31,6 +33,7 @@ export class Game {
   state: GameState;
   private inputs: Map<number, PlayerInput> = new Map();
   private events: GameEvent[] = [];
+  private tickCount = 0;
 
   constructor(playerNames: string[]) {
     const n = playerNames.length;
@@ -44,19 +47,22 @@ export class Game {
     }));
 
     this.state = {
-      ball: this.resetBall(),
+      ball: this.resetBall(0),
       players,
       polygon: sides,
+      difficultyLevel: 0,
+      ticksUntilNextLevel: DIFFICULTY_INTERVAL,
     };
   }
 
-  private resetBall(): Ball {
+  private resetBall(level: number): Ball {
+    const speed = BALL_SPEED * ballSpeedMultiplier(level);
     const angle = Math.random() * 2 * Math.PI;
     return {
       x: CENTER_X,
       y: CENTER_Y,
-      vx: BALL_SPEED * Math.cos(angle),
-      vy: BALL_SPEED * Math.sin(angle),
+      vx: speed * Math.cos(angle),
+      vy: speed * Math.sin(angle),
     };
   }
 
@@ -73,6 +79,8 @@ export class Game {
 
   /** Run one physics tick. Returns true if the game is still active. */
   tick(): boolean {
+    this.tickCount++;
+    this.updateDifficulty();
     this.updatePaddles();
     this.updateBall();
     return this.isActive();
@@ -83,8 +91,32 @@ export class Game {
     return alive.length > 1;
   }
 
+  private updateDifficulty(): void {
+    this.state.ticksUntilNextLevel = DIFFICULTY_INTERVAL - (this.tickCount % DIFFICULTY_INTERVAL);
+    const newLevel = Math.floor(this.tickCount / DIFFICULTY_INTERVAL);
+    if (newLevel > this.state.difficultyLevel) {
+      this.state.difficultyLevel = newLevel;
+      // Scale current ball velocity to new speed
+      const ball = this.state.ball;
+      const currentSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+      if (currentSpeed > 0) {
+        const newSpeed = BALL_SPEED * ballSpeedMultiplier(newLevel);
+        const scale = newSpeed / currentSpeed;
+        ball.vx *= scale;
+        ball.vy *= scale;
+      }
+      // Re-clamp paddle positions for smaller paddles
+      const paddleLen = effectivePaddleLength(newLevel);
+      const halfPaddle = paddleLen / 2;
+      for (const player of this.state.players) {
+        player.paddlePos = Math.max(halfPaddle, Math.min(1 - halfPaddle, player.paddlePos));
+      }
+    }
+  }
+
   private updatePaddles(): void {
-    const halfPaddle = PADDLE_LENGTH_RATIO / 2;
+    const paddleLen = effectivePaddleLength(this.state.difficultyLevel);
+    const halfPaddle = paddleLen / 2;
     for (const player of this.state.players) {
       if (!player.isAlive) {
         continue;
@@ -107,6 +139,7 @@ export class Game {
   private updateBall(): void {
     const ball = this.state.ball;
     const n = this.state.polygon;
+    const paddleLen = effectivePaddleLength(this.state.difficultyLevel);
 
     // Move ball
     ball.x += ball.vx;
@@ -129,9 +162,9 @@ export class Game {
         return;
       }
 
-      if (isPaddleHit(player.paddlePos, collision.t)) {
+      if (isPaddleHit(player.paddlePos, collision.t, paddleLen)) {
         // Paddle hit — reflect with spin
-        const spin = paddleSpin(player.paddlePos, collision.t);
+        const spin = paddleSpin(player.paddlePos, collision.t, paddleLen);
         this.reflectBall(collision.normal.x, collision.normal.y);
         this.applySpinToBall(spin);
         this.pushBallInside(collision);
@@ -157,7 +190,7 @@ export class Game {
       }
 
       // Reset ball to center
-      const newBall = this.resetBall();
+      const newBall = this.resetBall(this.state.difficultyLevel);
       ball.x = newBall.x;
       ball.y = newBall.y;
       ball.vx = newBall.vx;

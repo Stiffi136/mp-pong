@@ -3,7 +3,6 @@ import {
   CENTER_Y,
   POLYGON_RADIUS,
   BALL_RADIUS,
-  PADDLE_LENGTH_RATIO,
 } from "../shared/types.js";
 
 export interface Vec2 {
@@ -105,10 +104,10 @@ export function checkBallSideCollision(
 
 /**
  * Check if point t along a side falls within the paddle range.
- * paddlePos is 0..1 center position, paddle covers PADDLE_LENGTH_RATIO of the side.
+ * paddlePos is 0..1 center position, paddleLength is the effective ratio (0..1).
  */
-export function isPaddleHit(paddlePos: number, t: number): boolean {
-  const halfPaddle = PADDLE_LENGTH_RATIO / 2;
+export function isPaddleHit(paddlePos: number, t: number, paddleLength: number): boolean {
+  const halfPaddle = paddleLength / 2;
   const lo = paddlePos - halfPaddle;
   const hi = paddlePos + halfPaddle;
   return t >= lo && t <= hi;
@@ -118,8 +117,8 @@ export function isPaddleHit(paddlePos: number, t: number): boolean {
  * Calculate spin effect based on where ball hits the paddle.
  * Returns a small angle offset.
  */
-export function paddleSpin(paddlePos: number, hitT: number): number {
-  const halfPaddle = PADDLE_LENGTH_RATIO / 2;
+export function paddleSpin(paddlePos: number, hitT: number, paddleLength: number): number {
+  const halfPaddle = paddleLength / 2;
   const offset = (hitT - paddlePos) / halfPaddle; // -1..1
   return offset * 0.3; // max ±0.3 radians spin
 }
