@@ -31,6 +31,9 @@ const btnEnter = document.getElementById("btn-enter") as HTMLButtonElement;
 const btnReady = document.getElementById("btn-ready") as HTMLButtonElement;
 const btnCopy = document.getElementById("btn-copy") as HTMLButtonElement;
 const btnRematch = document.getElementById("btn-rematch") as HTMLButtonElement;
+const btnLeft = document.getElementById("btn-left") as HTMLButtonElement;
+const btnRight = document.getElementById("btn-right") as HTMLButtonElement;
+const touchControls = document.getElementById("touch-controls")!;
 const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
 // ── Init ────────────────────────────────────────────────────────────────────
@@ -83,6 +86,7 @@ function handleServerMessage(msg: ServerMessage): void {
       showScreen("game");
       hideGameOver();
       document.getElementById("hud")!.style.display = "block";
+      touchControls.style.display = "flex";
       break;
 
     case "state":
@@ -114,7 +118,8 @@ requestAnimationFrame(renderLoop);
 
 function sendInput(): void {
   if (ws?.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: "input", left: inputState.left, right: inputState.right }));
+    // Swap left/right to match the rotated view (player's side is at the bottom)
+    ws.send(JSON.stringify({ type: "input", left: inputState.right, right: inputState.left }));
   }
 }
 
@@ -207,6 +212,24 @@ btnRematch.addEventListener("click", () => {
     hideGameOver();
   }
 });
+
+// ── Touch Controls ──────────────────────────────────────────────────────────
+
+function addTouchButton(btn: HTMLButtonElement, dir: "left" | "right"): void {
+  const setDir = (pressed: boolean) => {
+    inputState[dir] = pressed;
+    sendInput();
+  };
+  btn.addEventListener("touchstart", (e) => { e.preventDefault(); setDir(true); });
+  btn.addEventListener("touchend", (e) => { e.preventDefault(); setDir(false); });
+  btn.addEventListener("touchcancel", () => { setDir(false); });
+  btn.addEventListener("mousedown", () => { setDir(true); });
+  btn.addEventListener("mouseup", () => { setDir(false); });
+  btn.addEventListener("mouseleave", () => { setDir(false); });
+}
+
+addTouchButton(btnLeft, "left");
+addTouchButton(btnRight, "right");
 
 // ── Start ───────────────────────────────────────────────────────────────────
 
