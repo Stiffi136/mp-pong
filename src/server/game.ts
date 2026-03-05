@@ -18,6 +18,7 @@ import {
   isPaddleHit,
   paddleSpin,
   reflect,
+  sideNormal,
 } from "./polygon.js";
 
 export interface PlayerInput {
@@ -57,13 +58,39 @@ export class Game {
 
   private resetBall(level: number): Ball {
     const speed = BALL_SPEED * ballSpeedMultiplier(level);
-    const angle = Math.random() * 2 * Math.PI;
+    const n = this.state?.polygon ?? 4;
+    const MIN_ANGLE = Math.PI / 7.2; // 25°
+
+    // Pick a random angle that isn't too parallel to any wall
+    let angle: number;
+    let attempts = 0;
+    do {
+      angle = Math.random() * 2 * Math.PI;
+      attempts++;
+    } while (attempts < 50 && this.isTooParallel(angle, n, MIN_ANGLE));
+
     return {
       x: CENTER_X,
       y: CENTER_Y,
       vx: speed * Math.cos(angle),
       vy: speed * Math.sin(angle),
     };
+  }
+
+  /** Check if a ball direction would be too parallel to any wall (non-player) side. */
+  private isTooParallel(angle: number, n: number, minAngle: number): boolean {
+    const vx = Math.cos(angle);
+    const vy = Math.sin(angle);
+    for (let i = 0; i < n; i++) {
+      // Skip player sides — only check walls
+      const isPlayerSide = this.state?.players.some((p) => p.slotIndex === i && p.isAlive);
+      if (isPlayerSide) continue;
+
+      const normal = sideNormal(i, n);
+      const dot = Math.abs(vx * normal.x + vy * normal.y);
+      if (dot < Math.sin(minAngle)) return true;
+    }
+    return false;
   }
 
   setInput(slotIndex: number, input: PlayerInput): void {
@@ -158,6 +185,7 @@ export class Game {
       if (!player || !player.isAlive) {
         // Wall side (no player, or eliminated player) — always reflect
         this.reflectBall(collision.normal.x, collision.normal.y);
+        this.enforceMinBounceAngle(collision.normal.x, collision.normal.y);
         this.pushBallInside(collision);
         return;
       }
@@ -167,6 +195,7 @@ export class Game {
         const spin = paddleSpin(player.paddlePos, collision.t, paddleLen);
         this.reflectBall(collision.normal.x, collision.normal.y);
         this.applySpinToBall(spin);
+        this.enforceMinBounceAngle(collision.normal.x, collision.normal.y);
         this.pushBallInside(collision);
         return;
       }
@@ -212,6 +241,29 @@ export class Game {
     const angle = Math.atan2(ball.vy, ball.vx) + spin;
     ball.vx = speed * Math.cos(angle);
     ball.vy = speed * Math.sin(angle);
+  }
+
+  /** Ensure ball doesn't travel nearly parallel to a wall after bouncing. */
+  private enforceMinBounceAngle(nx: number, ny: number): void {
+    const MIN_ANGLE = Math.PI / 7.2; // 25°
+    const ball = this.state.ball;
+    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+    if (speed === 0) return;
+
+    const dot = ball.vx * nx + ball.vy * ny;
+    const minNormal = speed * Math.sin(MIN_ANGLE);
+    if (Math.abs(dot) >= minNormal) return;
+
+    const sign = dot >= 0 ? 1 : -1;
+    const tx = ball.vx - dot * nx;
+    const ty = ball.vy - dot * ny;
+    const tLen = Math.sqrt(tx * tx + ty * ty);
+    if (tLen === 0) return;
+
+    const newNormal = minNormal * sign;
+    const newTangent = speed * Math.cos(MIN_ANGLE);
+    ball.vx = (tx / tLen) * newTangent + nx * newNormal;
+    ball.vy = (ty / tLen) * newTangent + ny * newNormal;
   }
 
   private pushBallInside(collision: {
