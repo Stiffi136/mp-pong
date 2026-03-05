@@ -1,6 +1,12 @@
+import tseslint from "typescript-eslint";
+
 export default [
   {
     ignores: ["dist/**", "build/**", "coverage/**", "node_modules/**"],
+  },
+  ...tseslint.configs.recommended,
+  {
+    files: ["src/**/*.ts", "scripts/**/*.mjs"],
     linterOptions: {
       reportUnusedDisableDirectives: "error"
     },
@@ -41,7 +47,8 @@ export default [
       "no-throw-literal": "error",
       "no-unmodified-loop-condition": "error",
       "no-unused-expressions": "error",
-      "no-unused-vars": [
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
         "error",
         {
           "args": "all",

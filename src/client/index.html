@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mp-pong</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    canvas {
+      border: 1px solid #333;
+      display: none;
+    }
+
+    /* Screens */
+    .screen { display: none; flex-direction: column; align-items: center; gap: 16px; }
+    .screen.active { display: flex; }
+
+    h1 { font-size: 48px; letter-spacing: 4px; color: #0f0; }
+    h2 { font-size: 24px; color: #0f0; }
+
+    button {
+      background: #0f0;
+      color: #111;
+      border: none;
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      min-width: 160px;
+    }
+    button:hover { background: #0d0; }
+    button:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+    input {
+      background: #222;
+      color: #eee;
+      border: 1px solid #555;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 4px;
+      width: 240px;
+      text-align: center;
+    }
+    input:focus { outline: none; border-color: #0f0; }
+
+    .btn-row { display: flex; gap: 12px; }
+
+    /* Lobby */
+    #lobby-players {
+      list-style: none;
+      min-width: 200px;
+    }
+    #lobby-players li {
+      padding: 6px 12px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+    }
+    .ready-badge {
+      color: #0f0;
+      font-weight: bold;
+    }
+
+    .share-url {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .share-url input {
+      width: 320px;
+      font-size: 14px;
+    }
+    .share-url button {
+      min-width: auto;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    /* HUD */
+    #hud {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 10;
+    }
+    #hud .lives-row {
+      display: flex;
+      gap: 16px;
+    }
+    .lives-row span.eliminated {
+      text-decoration: line-through;
+      color: #666;
+    }
+
+    /* Game Over overlay */
+    #game-over-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      z-index: 20;
+    }
+    #game-over-overlay.active { display: flex; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+      <h1>MP-PONG</h1>
+      <div class="btn-row">
+        <button id="btn-play">Play</button>
+        <button id="btn-join-show">Join</button>
+      </div>
+      <div id="join-input-row" style="display:none;">
+        <input id="input-room-id" type="text" placeholder="Raum-ID eingeben">
+      </div>
+    </div>
+
+    <!-- Name Screen -->
+    <div id="name-screen" class="screen">
+      <h2>Dein Name</h2>
+      <input id="input-name" type="text" placeholder="Name eingeben" maxlength="16">
+      <button id="btn-enter">Beitreten</button>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="screen">
+      <h2>Lobby</h2>
+      <div class="share-url">
+        <input id="share-url" type="text" readonly>
+        <button id="btn-copy">Copy</button>
+      </div>
+      <ul id="lobby-players"></ul>
+      <button id="btn-ready">Ready</button>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="game-canvas" width="800" height="800"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="lives-row" id="lives-display"></div>
+    </div>
+
+    <!-- Game Over -->
+    <div id="game-over-overlay">
+      <h1 id="winner-text"></h1>
+      <button id="btn-rematch">Rematch</button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

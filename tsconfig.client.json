@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "outDir": "dist/client",
+    "rootDir": "src"
+  },
+  "include": ["src/client", "src/shared"]
+}
