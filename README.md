@@ -38,7 +38,7 @@ Open **[https://stiffi136.github.io/mp-pong/](https://stiffi136.github.io/mp-pon
 
 Every 30 seconds the difficulty increases:
 
-- Ball speed increases by **20%**
+- Ball speed increases by **40%**
 - Paddle size decreases by **20%**
 
 The HUD timer shows the countdown to the next level.

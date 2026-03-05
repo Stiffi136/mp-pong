@@ -105,9 +105,9 @@ export const PADDLE_SPEED = 0.015;
 export const TICK_RATE = 60;
 export const DIFFICULTY_INTERVAL = 30 * TICK_RATE; // 30 seconds
 
-/** Ball speed multiplier at given difficulty level (grows 20% per level). */
+/** Ball speed multiplier at given difficulty level (grows 40% per level). */
 export function ballSpeedMultiplier(level: number): number {
-  return 1 + level * 0.2;
+  return 1 + level * 0.4;
 }
 
 /** Paddle length multiplier at given difficulty level (shrinks 20% per level, min 20%). */
