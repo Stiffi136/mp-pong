@@ -4,13 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:server": "tsc -p tsconfig.server.json",
     "build:client": "node scripts/build-client.mjs",
-    "build": "npm run build:server && npm run build:client",
-    "dev": "npm run build && node --watch dist/server/server/index.js & node scripts/build-client.mjs --watch & npx serve dist/client -l 3000 & wait",
-    "dev:server": "tsc -p tsconfig.server.json --watch",
+    "build": "npm run build:client",
+    "dev": "bun --watch src/server/index.ts & node scripts/build-client.mjs --watch & npx serve dist/client -l 3000 & wait",
+    "dev:server": "bun --watch src/server/index.ts",
     "dev:client": "node scripts/build-client.mjs --watch",
-    "start": "node dist/server/server/index.js",
+    "start": "bun run src/server/index.ts",
     "lint": "eslint src/",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit"
   },
